@@ -24,22 +24,32 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
     "vue": ">=3.0.0"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "vue": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@types/react": "^19.2.14",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
     "react": "^19.2.4",
     "tsup": "^8.5.1",
     "typescript": "^6.0.2",
