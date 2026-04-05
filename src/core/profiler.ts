@@ -1,4 +1,5 @@
-import { logWarning } from './logger';
+import { logWarning } from "./logger";
+import { isEnabled } from "./config";
 
 export interface ProfilerOptions {
   slowThresholdMs?: number; // Warn if render duration exceed this (default 20ms)
@@ -18,15 +19,17 @@ const componentStats = new Map<string, ComponentStat>();
 export function checkRenderThresholds(
   componentName: string,
   timeMs: number,
-  options?: ProfilerOptions
+  options?: ProfilerOptions,
 ) {
+  if (!isEnabled()) return;
+
   const slowThresholdMs = options?.slowThresholdMs || 20;
 
   if (timeMs > slowThresholdMs) {
     logWarning(
       componentName,
-      'slow',
-      `render time: ${timeMs.toFixed(2)}ms (Threshold: ${slowThresholdMs}ms)`
+      "slow",
+      `render time: ${timeMs.toFixed(2)}ms (Threshold: ${slowThresholdMs}ms)`,
     );
   }
 }
@@ -36,8 +39,10 @@ export function checkRenderThresholds(
  */
 export function trackRenderFrequency(
   componentName: string,
-  options?: ProfilerOptions
+  options?: ProfilerOptions,
 ) {
+  if (!isEnabled()) return;
+
   const frequencyRenders = options?.frequencyRenders || 20;
   const frequencyTimeWindowMs = options?.frequencyTimeWindowMs || 5000;
   const now = performance.now();
@@ -50,7 +55,7 @@ export function trackRenderFrequency(
 
   // Clear out old timestamps that fall outside the current time window
   stat.renderTimestamps = stat.renderTimestamps.filter(
-    (timestamp) => now - timestamp < frequencyTimeWindowMs
+    (timestamp) => now - timestamp < frequencyTimeWindowMs,
   );
 
   stat.renderTimestamps.push(now);
@@ -59,8 +64,8 @@ export function trackRenderFrequency(
   if (stat.renderTimestamps.length > frequencyRenders) {
     logWarning(
       componentName,
-      'frequency',
-      `renders: ${stat.renderTimestamps.length}\nduration: ${(frequencyTimeWindowMs / 1000).toFixed(1)} seconds`
+      "frequency",
+      `renders: ${stat.renderTimestamps.length}\nduration: ${(frequencyTimeWindowMs / 1000).toFixed(1)} seconds`,
     );
     // Reset current bucket to avoid spamming the console
     stat.renderTimestamps = [];
