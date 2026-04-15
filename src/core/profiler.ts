@@ -37,7 +37,7 @@ export function checkRenderThresholds(
 /**
  * Records individual renders to track excessive re-renders in a short period.
  */
-export function trackRenderFrequency(
+export function renderBurstDetection(
   componentName: string,
   options?: ProfilerOptions,
 ) {
@@ -71,3 +71,7 @@ export function trackRenderFrequency(
     stat.renderTimestamps = [];
   }
 }
+
+function countRenders() {}
+
+function renderFrequency() {}

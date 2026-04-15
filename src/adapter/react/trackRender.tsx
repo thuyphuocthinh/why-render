@@ -1,11 +1,16 @@
-import React, { Profiler, ProfilerOnRenderCallback, useEffect, useRef } from 'react';
+import React, {
+  Profiler,
+  ProfilerOnRenderCallback,
+  useEffect,
+  useRef,
+} from "react";
 import {
   shallowDiff,
   getRenderReason,
   logRender,
   checkRenderThresholds,
-  trackRenderFrequency,
-} from '@/core';
+  renderBurstDetection,
+} from "@/core";
 
 /**
  * Higher-Order Component (HOC) to track render duration and reason
@@ -13,13 +18,13 @@ import {
  */
 export function withWhyRender<P extends object>(
   WrappedComponent: React.ComponentType<P>,
-  componentName?: string
+  componentName?: string,
 ) {
   const name =
     componentName ||
     WrappedComponent.displayName ||
     WrappedComponent.name ||
-    'UnknownComponent';
+    "UnknownComponent";
 
   const WithWhyRender = (props: P) => {
     const prevProps = useRef<P>(null);
@@ -31,15 +36,15 @@ export function withWhyRender<P extends object>(
 
     const onRender: ProfilerOnRenderCallback = (id, phase, actualDuration) => {
       const changes = shallowDiff(prevProps.current || {}, props);
-      let reason = '  - First Render (Mount)';
+      let reason = "  - First Render (Mount)";
 
-      if (phase === 'update') {
+      if (phase === "update") {
         reason = getRenderReason(changes);
       }
 
       logRender(name, reason, actualDuration);
       checkRenderThresholds(name, actualDuration);
-      trackRenderFrequency(name);
+      renderBurstDetection(name);
     };
 
     return (

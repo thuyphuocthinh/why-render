@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 import {
   shallowDiff,
   getRenderReason,
   logRender,
   checkRenderThresholds,
-  trackRenderFrequency,
-} from '@/core';
+  renderBurstDetection,
+} from "@/core";
 
 /**
  * Custom hook to track render information inside a Function Component directly.
@@ -13,7 +13,7 @@ import {
  */
 export function useWhyRender(
   componentName: string,
-  propsToTrack: Record<string, any> = {}
+  propsToTrack: Record<string, any> = {},
 ) {
   const prevProps = useRef<Record<string, any>>(null);
   const renderStartTime = useRef(performance.now());
@@ -26,7 +26,7 @@ export function useWhyRender(
     const renderDuration = performance.now() - renderStartTime.current;
 
     const changes = shallowDiff(prevProps.current || {}, propsToTrack);
-    let reason = '  - First Render (Mount)';
+    let reason = "  - First Render (Mount)";
 
     if (prevProps.current) {
       reason = getRenderReason(changes);
@@ -34,7 +34,7 @@ export function useWhyRender(
 
     logRender(componentName, reason, renderDuration);
     checkRenderThresholds(componentName, renderDuration);
-    trackRenderFrequency(componentName);
+    renderBurstDetection(componentName);
 
     // Save previous props for the next render
     prevProps.current = propsToTrack;

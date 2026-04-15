@@ -4,7 +4,7 @@ import {
   getRenderReason,
   logRender,
   checkRenderThresholds,
-  trackRenderFrequency,
+  renderBurstDetection,
 } from "@/core";
 
 /**
@@ -34,7 +34,7 @@ export function useWhyRender(
 
     logRender(componentName, reason, renderDuration);
     checkRenderThresholds(componentName, renderDuration);
-    trackRenderFrequency(componentName);
+    renderBurstDetection(componentName);
 
     prevProps = currentProps;
   });
@@ -56,7 +56,7 @@ export function useWhyRender(
 
     logRender(componentName, reason, renderDuration);
     checkRenderThresholds(componentName, renderDuration);
-    trackRenderFrequency(componentName);
+    renderBurstDetection(componentName);
 
     prevProps = currentProps;
   });
