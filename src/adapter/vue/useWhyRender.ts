@@ -4,7 +4,8 @@ import {
   getRenderReason,
   logRender,
   checkRenderThresholds,
-  renderBurstDetection,
+  recordRender,
+  deepEqual,
 } from "@/core";
 
 /**
@@ -34,7 +35,7 @@ export function useWhyRender(
 
     logRender(componentName, reason, renderDuration);
     checkRenderThresholds(componentName, renderDuration);
-    renderBurstDetection(componentName);
+    recordRender(componentName, renderDuration, false);
 
     prevProps = currentProps;
   });
@@ -49,14 +50,22 @@ export function useWhyRender(
 
     const changes = shallowDiff(prevProps || {}, currentProps);
     let reason = "  - Component Updated";
+    let isWasted = false;
 
     if (prevProps) {
       reason = getRenderReason(changes);
+
+      // Determine if render is wasted based on props equality
+      if (changes.length === 0) {
+        isWasted = true;
+      } else {
+        isWasted = changes.every((c) => deepEqual(c.prev, c.next));
+      }
     }
 
     logRender(componentName, reason, renderDuration);
     checkRenderThresholds(componentName, renderDuration);
-    renderBurstDetection(componentName);
+    recordRender(componentName, renderDuration, isWasted);
 
     prevProps = currentProps;
   });

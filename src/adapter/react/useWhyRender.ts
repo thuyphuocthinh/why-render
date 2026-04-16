@@ -4,7 +4,8 @@ import {
   getRenderReason,
   logRender,
   checkRenderThresholds,
-  renderBurstDetection,
+  recordRender,
+  deepEqual,
 } from "@/core";
 
 /**
@@ -27,14 +28,28 @@ export function useWhyRender(
 
     const changes = shallowDiff(prevProps.current || {}, propsToTrack);
     let reason = "  - First Render (Mount)";
+    let isWasted = false;
+
+    // let isWasted = wasteDetection({
+    //   propsDiff: changes,
+    //   stateDiff: [],
+    //   contextDiff: [],
+    // });
 
     if (prevProps.current) {
       reason = getRenderReason(changes);
+
+      // Determine if render is wasted based on props equality
+      if (changes.length === 0) {
+        isWasted = true;
+      } else {
+        isWasted = changes.every((c) => deepEqual(c.prev, c.next));
+      }
     }
 
     logRender(componentName, reason, renderDuration);
     checkRenderThresholds(componentName, renderDuration);
-    renderBurstDetection(componentName);
+    recordRender(componentName, renderDuration, isWasted);
 
     // Save previous props for the next render
     prevProps.current = propsToTrack;
