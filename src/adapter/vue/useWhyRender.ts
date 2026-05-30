@@ -92,6 +92,13 @@ export function useWhyRender(
 
     reportRender(report);
     
+    // Flash Heatmap
+    if (instance && instance.vnode.el && instance.vnode.el instanceof Element) {
+      import('@/ui/heatmap').then(({ flashElement }) => {
+        flashElement(instance.vnode.el as Element, isWasted);
+      });
+    }
+    
     // Reset trigger reason
     triggerReason = { type: "unknown" };
     prevProps = currentProps;
