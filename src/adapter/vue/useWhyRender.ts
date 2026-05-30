@@ -1,11 +1,10 @@
 import { onBeforeUpdate, onUpdated, onMounted } from "vue";
 import {
   shallowDiff,
-  getRenderReason,
-  logRender,
-  checkRenderThresholds,
-  recordRender,
+  reportRender,
   deepEqual,
+  ComponentReport,
+  RenderReason
 } from "@/core";
 
 /**
@@ -17,6 +16,10 @@ export function useWhyRender(
   componentName: string,
   propsToTrack: Record<string, any> | (() => Record<string, any>) = {},
 ) {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
   let prevProps: Record<string, any> | null = null;
   let renderStartTime = performance.now();
 
@@ -30,13 +33,16 @@ export function useWhyRender(
     const currentProps = getProps();
     const renderDuration = performance.now() - renderStartTime;
 
-    const changes = shallowDiff({}, currentProps);
-    const reason = "  - First Render (Mount)";
+    const report: ComponentReport = {
+      componentName,
+      framework: "vue",
+      renderTimeMs: renderDuration,
+      reason: { type: "unknown" },
+      timestamp: performance.now(),
+      isWasted: false
+    };
 
-    logRender(componentName, reason, renderDuration);
-    checkRenderThresholds(componentName, renderDuration);
-    recordRender(componentName, renderDuration, false);
-
+    reportRender(report);
     prevProps = currentProps;
   });
 
@@ -49,11 +55,11 @@ export function useWhyRender(
     const renderDuration = performance.now() - renderStartTime;
 
     const changes = shallowDiff(prevProps || {}, currentProps);
-    let reason = "  - Component Updated";
+    let reason: RenderReason = { type: "unknown" };
     let isWasted = false;
 
     if (prevProps) {
-      reason = getRenderReason(changes);
+      reason = { type: "props", changes };
 
       // Determine if render is wasted based on props equality
       if (changes.length === 0) {
@@ -63,10 +69,16 @@ export function useWhyRender(
       }
     }
 
-    logRender(componentName, reason, renderDuration);
-    checkRenderThresholds(componentName, renderDuration);
-    recordRender(componentName, renderDuration, isWasted);
+    const report: ComponentReport = {
+      componentName,
+      framework: "vue",
+      renderTimeMs: renderDuration,
+      reason,
+      timestamp: performance.now(),
+      isWasted
+    };
 
+    reportRender(report);
     prevProps = currentProps;
   });
 }

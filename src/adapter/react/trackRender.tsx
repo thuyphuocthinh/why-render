@@ -6,15 +6,11 @@ import React, {
 } from "react";
 import {
   shallowDiff,
-  getRenderReason,
-  logRender,
-  checkRenderThresholds,
-  renderBurstDetection,
-  logWasted,
-  recordRender,
+  reportRender,
   deepEqual,
+  ComponentReport,
+  RenderReason
 } from "@/core";
-import { totalWastedTime, wastedRatio } from "~/src/core/waste";
 
 /**
  * Higher-Order Component (HOC) to track render duration and reason
@@ -24,6 +20,10 @@ export function withWhyRender<P extends object>(
   WrappedComponent: React.ComponentType<P>,
   componentName?: string,
 ) {
+  if (process.env.NODE_ENV === "production") {
+    return WrappedComponent;
+  }
+
   const name =
     componentName ||
     WrappedComponent.displayName ||
@@ -40,19 +40,24 @@ export function withWhyRender<P extends object>(
 
     const onRender: ProfilerOnRenderCallback = (id, phase, actualDuration) => {
       const changes = shallowDiff(prevProps.current || {}, props);
-      let reason = "  - First Render (Mount)";
+      let reason: RenderReason = { type: "unknown" };
       let isWasted = false;
 
       if (phase === "update") {
-        reason = getRenderReason(changes);
+        reason = { type: "props", changes };
         isWasted = changes.every((c) => deepEqual(c.prev, c.next));
       }
 
-      logRender(name, reason, actualDuration);
-      checkRenderThresholds(name, actualDuration);
-      recordRender(name, actualDuration, isWasted);
-      logWasted(name, "ratio", reason, wastedRatio(name, 5000));
-      logWasted(name, "total", reason, totalWastedTime());
+      const report: ComponentReport = {
+        componentName: name,
+        framework: "react",
+        renderTimeMs: actualDuration,
+        reason,
+        timestamp: performance.now(),
+        isWasted
+      };
+
+      reportRender(report);
     };
 
     return (

@@ -8,5 +8,10 @@
 - [x] Tạo React adapter (`useWhyRender` và `<withWhyRender>` HOC).
 - [x] Setup cơ bản Vue adapter.
 
-## Các tính năng Vibe Coding (Sắp tới)
-*(AI sẽ điền vào đây ngay sau khi hoàn thành code cho một feature)*
+## Các tính năng Vibe Coding (Đã hoàn thành)
+- [x] **Phase 1: Core Refactoring & Robustness**
+  - Chuyển đổi thành kiến trúc Event-Driven (Pub/Sub) sử dụng `coreEmitter`.
+  - Định nghĩa chuẩn hợp đồng `ComponentReport` và `RenderReason`.
+  - Ngăn ngừa Memory Leak: Giới hạn lưu trữ tối đa `MAX_RECORDS_PER_COMPONENT` = 50 cho mỗi component.
+  - Phân tách Logger thành `ConsoleReporter`.
+  - Tối ưu Zero-overhead: Bọc toàn bộ các hook/adapter bằng `process.env.NODE_ENV !== 'production'`.

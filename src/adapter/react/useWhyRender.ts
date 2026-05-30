@@ -1,14 +1,11 @@
 import { useEffect, useRef } from "react";
 import {
   shallowDiff,
-  getRenderReason,
-  logRender,
-  checkRenderThresholds,
-  recordRender,
+  reportRender,
   deepEqual,
-  logWasted,
+  ComponentReport,
+  RenderReason
 } from "@/core";
-import { totalWastedTime, wastedRatio } from "~/src/core/waste";
 
 /**
  * Custom hook to track render information inside a Function Component directly.
@@ -18,6 +15,10 @@ export function useWhyRender(
   componentName: string,
   propsToTrack: Record<string, any> = {},
 ) {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
   const prevProps = useRef<Record<string, any>>(null);
   const renderStartTime = useRef(performance.now());
 
@@ -29,17 +30,11 @@ export function useWhyRender(
     const renderDuration = performance.now() - renderStartTime.current;
 
     const changes = shallowDiff(prevProps.current || {}, propsToTrack);
-    let reason = "  - First Render (Mount)";
+    let reason: RenderReason = { type: "unknown" };
     let isWasted = false;
 
-    // let isWasted = wasteDetection({
-    //   propsDiff: changes,
-    //   stateDiff: [],
-    //   contextDiff: [],
-    // });
-
     if (prevProps.current) {
-      reason = getRenderReason(changes);
+      reason = { type: "props", changes };
 
       // Determine if render is wasted based on props equality
       if (changes.length === 0) {
@@ -49,11 +44,16 @@ export function useWhyRender(
       }
     }
 
-    logRender(componentName, reason, renderDuration);
-    checkRenderThresholds(componentName, renderDuration);
-    recordRender(componentName, renderDuration, isWasted);
-    logWasted(componentName, "ratio", reason, wastedRatio(componentName, 5000));
-    logWasted(componentName, "total", reason, totalWastedTime());
+    const report: ComponentReport = {
+      componentName,
+      framework: "react",
+      renderTimeMs: renderDuration,
+      reason,
+      timestamp: performance.now(),
+      isWasted
+    };
+
+    reportRender(report);
 
     // Save previous props for the next render
     prevProps.current = propsToTrack;
