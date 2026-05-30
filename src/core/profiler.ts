@@ -112,3 +112,21 @@ export function renderFrequency(componentName: string, timeWindowMs: number) {
   const count = countRenders(componentName, timeWindowMs);
   return count / (timeWindowMs / 1000);
 }
+
+/**
+ * ```
+η = 1 - (T_actual / T_base)
+Với:
+  η ∈ [0, 1]
+  η = 0  → memo không có tác dụng (render toàn bộ)
+  η = 1  → memo hoàn hảo (không render gì thêm)
+  η < 0  → memo overhead > benefit (xảy ra khi cây nhỏ)
+ */
+
+export function memoizationEfficiency(componentName: string, timeWindowMs: number) {
+  const stat = componentStats.get(componentName);
+  if (!stat) return 0;
+  return stat.renders.filter(
+    (record) => performance.now() - record.timestamp < timeWindowMs,
+  ).length;
+}

@@ -10,7 +10,11 @@ import {
   logRender,
   checkRenderThresholds,
   renderBurstDetection,
+  logWasted,
+  recordRender,
+  deepEqual,
 } from "@/core";
+import { totalWastedTime, wastedRatio } from "~/src/core/waste";
 
 /**
  * Higher-Order Component (HOC) to track render duration and reason
@@ -37,14 +41,18 @@ export function withWhyRender<P extends object>(
     const onRender: ProfilerOnRenderCallback = (id, phase, actualDuration) => {
       const changes = shallowDiff(prevProps.current || {}, props);
       let reason = "  - First Render (Mount)";
+      let isWasted = false;
 
       if (phase === "update") {
         reason = getRenderReason(changes);
+        isWasted = changes.every((c) => deepEqual(c.prev, c.next));
       }
 
       logRender(name, reason, actualDuration);
       checkRenderThresholds(name, actualDuration);
-      renderBurstDetection(name);
+      recordRender(name, actualDuration, isWasted);
+      logWasted(name, "ratio", reason, wastedRatio(name, 5000));
+      logWasted(name, "total", reason, totalWastedTime());
     };
 
     return (

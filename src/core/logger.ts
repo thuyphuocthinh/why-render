@@ -45,3 +45,33 @@ export function logWarning(
   console.warn(details);
   console.groupEnd();
 }
+
+/**
+ * Logs wasted rendering information to the console with styling.
+ */
+export function logWasted(
+  componentName: string,
+  type: "ratio" | "total",
+  reason: string,
+  timeMs: number,
+) {
+  if (!isEnabled()) return;
+
+  const title =
+    type === "ratio" ? "⚡ [Wasted Ratio]" : "⚡ [Wasted Total]";
+
+  const unit = type === "ratio" ? "%" : "ms";
+
+  console.groupCollapsed(
+    `%c${title} %cin ${componentName} %c(${timeMs.toFixed(2)}${unit})`,
+    "color: #0ea5e9; font-weight: bold;",
+    "color: inherit; font-weight: normal;",
+    "color: gray; font-weight: normal;",
+  );
+  console.log(
+    `%cReason:\n%c${reason}`,
+    "color: #9ca3af; font-weight: bold;",
+    "color: inherit;",
+  );
+  console.groupEnd();
+}

@@ -6,7 +6,9 @@ import {
   checkRenderThresholds,
   recordRender,
   deepEqual,
+  logWasted,
 } from "@/core";
+import { totalWastedTime, wastedRatio } from "~/src/core/waste";
 
 /**
  * Custom hook to track render information inside a Function Component directly.
@@ -50,6 +52,8 @@ export function useWhyRender(
     logRender(componentName, reason, renderDuration);
     checkRenderThresholds(componentName, renderDuration);
     recordRender(componentName, renderDuration, isWasted);
+    logWasted(componentName, "ratio", reason, wastedRatio(componentName, 5000));
+    logWasted(componentName, "total", reason, totalWastedTime());
 
     // Save previous props for the next render
     prevProps.current = propsToTrack;
