@@ -38,7 +38,7 @@ export function withWhyRender<P extends object>(
       prevProps.current = props;
     });
 
-    const onRender: ProfilerOnRenderCallback = (id, phase, actualDuration) => {
+    const onRender: ProfilerOnRenderCallback = (id, phase, actualDuration, baseDuration) => {
       const changes = shallowDiff(prevProps.current || {}, props);
       let reason: RenderReason = { type: "unknown" };
       let isWasted = false;
@@ -52,6 +52,7 @@ export function withWhyRender<P extends object>(
         componentName: name,
         framework: "react",
         renderTimeMs: actualDuration,
+        baseDurationMs: baseDuration,
         reason,
         timestamp: performance.now(),
         isWasted

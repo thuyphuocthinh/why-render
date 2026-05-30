@@ -11,6 +11,7 @@ export interface ComponentReport {
   componentName: string;
   framework: "react" | "vue";
   renderTimeMs: number;
+  baseDurationMs?: number; // T_base
   reason: RenderReason;
   timestamp: number;
   isWasted: boolean;
@@ -25,6 +26,7 @@ export interface ProfilerOptions {
 export interface RenderRecord {
   timestamp: number;
   durationMs: number;
+  baseDurationMs?: number;
   isWasted: boolean;
   reason: RenderReason;
 }

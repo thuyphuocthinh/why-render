@@ -1,4 +1,4 @@
-import { onBeforeUpdate, onUpdated, onMounted } from "vue";
+import { onBeforeUpdate, onUpdated, onMounted, onRenderTriggered, getCurrentInstance } from "vue";
 import {
   shallowDiff,
   reportRender,
@@ -13,15 +13,19 @@ import {
  * (like the `props` object itself) or a getter function returning an object.
  */
 export function useWhyRender(
-  componentName: string,
+  componentName?: string,
   propsToTrack: Record<string, any> | (() => Record<string, any>) = {},
 ) {
   if (process.env.NODE_ENV === "production") {
     return;
   }
 
+  const instance = getCurrentInstance();
+  const name = componentName ?? instance?.type?.name ?? instance?.type?.__name ?? "UnknownVueComponent";
+
   let prevProps: Record<string, any> | null = null;
   let renderStartTime = performance.now();
+  let triggerReason: RenderReason = { type: "unknown" };
 
   const getProps = () => {
     return typeof propsToTrack === "function"
@@ -29,12 +33,21 @@ export function useWhyRender(
       : { ...propsToTrack };
   };
 
+  onRenderTriggered((e) => {
+    triggerReason = {
+      type: "state",
+      changedKey: String(e.key),
+      oldValue: e.oldValue,
+      newValue: e.newValue,
+    };
+  });
+
   onMounted(() => {
     const currentProps = getProps();
     const renderDuration = performance.now() - renderStartTime;
 
     const report: ComponentReport = {
-      componentName,
+      componentName: name,
       framework: "vue",
       renderTimeMs: renderDuration,
       reason: { type: "unknown" },
@@ -55,22 +68,21 @@ export function useWhyRender(
     const renderDuration = performance.now() - renderStartTime;
 
     const changes = shallowDiff(prevProps || {}, currentProps);
-    let reason: RenderReason = { type: "unknown" };
+    let reason: RenderReason = triggerReason;
     let isWasted = false;
 
-    if (prevProps) {
+    // If triggerReason is unknown (maybe a forced update or pure prop change not caught by reactivity tracker)
+    if (reason.type === "unknown" && prevProps && changes.length > 0) {
       reason = { type: "props", changes };
-
-      // Determine if render is wasted based on props equality
-      if (changes.length === 0) {
-        isWasted = true;
-      } else {
-        isWasted = changes.every((c) => deepEqual(c.prev, c.next));
+      if (changes.every((c) => deepEqual(c.prev, c.next))) {
+         isWasted = true;
       }
+    } else if (reason.type === "state" && deepEqual(reason.oldValue, reason.newValue)) {
+      isWasted = true;
     }
 
     const report: ComponentReport = {
-      componentName,
+      componentName: name,
       framework: "vue",
       renderTimeMs: renderDuration,
       reason,
@@ -79,6 +91,9 @@ export function useWhyRender(
     };
 
     reportRender(report);
+    
+    // Reset trigger reason
+    triggerReason = { type: "unknown" };
     prevProps = currentProps;
   });
 }

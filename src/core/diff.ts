@@ -103,7 +103,7 @@ export function deepEqual(
  * @param changes
  * Detect change classfications
  */
-export function classfiy(changes: DiffResult) {
+export function classify(changes: DiffResult) {
   const { prev, next } = changes;
 
   if (typeof prev !== typeof next) return CHANGE_CLASSIFICATION.TYPE_CHANGE; // Type thay đổi hoàn toàn

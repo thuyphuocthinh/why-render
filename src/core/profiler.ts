@@ -69,7 +69,8 @@ function recordRender(
 
   stat.renders.push({ 
     timestamp: now, 
-    durationMs: report.renderTimeMs, 
+    durationMs: report.renderTimeMs,
+    baseDurationMs: report.baseDurationMs,
     isWasted: report.isWasted,
     reason: report.reason
   });
@@ -100,6 +101,35 @@ export function countRenders(componentName: string, timeWindowMs: number) {
   return stat.renders.filter(
     (record) => performance.now() - record.timestamp < timeWindowMs,
   ).length;
+}
+
+/**
+ * Memoization Efficiency: η = 1 - (T_actual / T_base)
+ */
+export function memoizationEfficiency(componentName: string, timeWindowMs: number) {
+  const stat = componentStats.get(componentName);
+  if (!stat || stat.renders.length === 0) return 0;
+  
+  const now = performance.now();
+  const rendersInWindow = stat.renders.filter(
+    (record) => now - record.timestamp < timeWindowMs,
+  );
+
+  if (rendersInWindow.length === 0) return 0;
+
+  let totalActual = 0;
+  let totalBase = 0;
+
+  for (const render of rendersInWindow) {
+    if (render.baseDurationMs && render.baseDurationMs > 0) {
+      totalActual += render.durationMs;
+      totalBase += render.baseDurationMs;
+    }
+  }
+
+  if (totalBase === 0) return 0; // cannot calculate without base duration
+
+  return 1 - (totalActual / totalBase);
 }
 
 /**
